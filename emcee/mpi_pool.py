@@ -52,7 +52,7 @@ class MPIPool(object):
         out one task to each cpu first and then sending out the rest
         as the cpus get done.
     """
-    def __init__(self, comm=None, debug=False, loadbalance=False):
+    def __init__(self, comm=None, debug=False, loadbalance=False, static_data=None):
         global MPI
         try:
             import mpi4py.MPI
@@ -67,6 +67,7 @@ class MPIPool(object):
         self.debug = debug
         self.function = _error_function
         self.loadbalance = loadbalance
+        self.static_data = static_data
         if self.size == 0:
             raise ValueError("Tried to create an MPI pool, but there "
                              "was only one MPI process available. "
@@ -119,6 +120,10 @@ class MPIPool(object):
 
             # If not a special message, just run the known function on
             # the input and return it asynchronously.
+            # Before execution add the static data, if any.
+            if self.static_data:
+                self.function.kwargs.update(static_data=self.static_data)
+
             result = self.function(task)
             if self.debug:
                 print("Worker {0} sending answer {1} with tag {2}."
